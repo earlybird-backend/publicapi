@@ -103,92 +103,119 @@ class InvoiceModel extends CI_Model {
             $market["currency_sign"] = $this->currencySign;
             $market["currency"] = $this->currencyName;
             $market["next_paydate"] = $this->paydate;
-
-            $paydate = $this->paydate;
-
-            $invoices = $this->Cachemodel->getCacheInvoice($this->cashpoolId, $this->vendorcode, $this->paydate);
-
-            if (isset($invoices) && $invoices != null) {
-
-                $dpe = 0;
-                $amount = 0;
-                $inv_count = 0 ;
-                foreach ($invoices as $inv) {
-
-                    if ($inv["InvoiceStatus"] == 1 && $inv["IsIncluded"] == 1 && strtotime($inv["EstPaydate"]) > strtotime($paydate) ) {
-                        $amount += $inv['InvoiceAmount'];
-                        $dpe += (strtotime($inv['EstPaydate']) - strtotime($paydate)) / 86400;
-                        $inv_count += 1;
-                    }
-                }
-
+            $sql = "select * from stat_current_cashpools_vendors where CashpoolCode='".$this->buyerid."' limit 1";
+            $row = $this->db->query($sql)->row_array();
+            if(isset($row))
+            {
                 $market['total'] = array(
-                    'available_amount'=> $amount,
-                    'average_apr' => $inv_count > 0 ? round($dpe /  $inv_count , 1) : 0 
+                    'available_amount'=> floatval($row['ValidAmount']),
+                    'average_apr' => floatval($row['ValidAvgDpe'])
+                );
+                $market['is_participation'] = intval($row['VendorStatus']);
+                $market['offer_status'] = 0;
+
+                $market['clearing'] = array(
+                    'available_amount' =>floatval($row['PayAmount']),
+                    'average_dpe' => floatval($row['AvgDpe'])
                 );
 
-                //判断供应商是否已经参与了开价
+                $market['nonclearing'] = array(
+                    'available_amount' => floatval($row['NoPayAmount']),
+                    'average_dpe' => floatval($row['NoAvgDpe'])
+                );
 
-                $bid =  $this->Cachemodel->getCacheOffer($this->cashpoolId, $this->vendorcode);
+                $market['discount'] = array(
+                    'amount' => floatval($row['PayDiscount']) ,
+                    'average_discount' => floatval($row['AvgDiscount']) ,
+                    'average_apr' =>  floatval($row['AvgAPR'])
+                );
+            //-----------------
+                /*$paydate = $this->paydate;
 
-                if ( isset($bid) && $bid != null) {
+                $invoices = $this->Cachemodel->getCacheInvoice($this->cashpoolId, $this->vendorcode, $this->paydate);
 
-                    $market['offer_type'] = $bid['type'];
-                    $market['offer_value'] = $bid['value'];
-                    $market['min_payment'] = $bid['payment'];
+                if (isset($invoices) && $invoices != null) {
 
-                    if ($bid['status'] >= 0) {
+                    $dpe = 0;
+                    $amount = 0;
+                    $inv_count = 0 ;
+                    foreach ($invoices as $inv) {
 
-                        $market['is_participation'] = 1;
-                        $market['offer_status'] = $bid['status'] == 0 ? 1 : 0;   //若 bidstatus = 1 时则为开价后已经计算, bidstatus = 0 时则为开价后正在计算
+                        if ($inv["InvoiceStatus"] == 1 && $inv["IsIncluded"] == 1 && strtotime($inv["EstPaydate"]) > strtotime($paydate) ) {
+                            $amount += $inv['InvoiceAmount'];
+                            $dpe += (strtotime($inv['EstPaydate']) - strtotime($paydate)) / 86400;
+                            $inv_count += 1;
+                        }
+                    }
+
+                    $market['total'] = array(
+                        'available_amount'=> $amount,
+                        'average_apr' => $inv_count > 0 ? round($dpe /  $inv_count , 1) : 0
+                    );
+
+
+                    //判断供应商是否已经参与了开价
+
+                    $bid =  $this->Cachemodel->getCacheOffer($this->cashpoolId, $this->vendorcode);
+
+                    if ( isset($bid) && $bid != null) {
+
+                       $market['offer_type'] = $bid['type'];
+                        $market['offer_value'] = $bid['value'];
+                        $market['min_payment'] = $bid['payment'];
+
+                        if ($bid['status'] >= 0) {
+
+                            $market['is_participation'] = 1;
+                            $market['offer_status'] = $bid['status'] == 0 ? 1 : 0;   //若 bidstatus = 1 时则为开价后已经计算, bidstatus = 0 时则为开价后正在计算
+
+                        }
+
+                    }else {
+
+                            $market['is_participation'] = 0;
+                            $market['offer_status'] = 0;
 
                     }
 
-                }else {
+                        $awards = $this->Cachemodel->getCacheAwards($this->cashpoolId, $this->vendorcode);
 
-                        $market['is_participation'] = 0;
-                        $market['offer_status'] = 0;
+                        $clear_amount = 0 ;
+                        $clear_discount = 0;
+                        $avg_dpe = 0 ;
+                        #$avg_apr = 0 ;
+                        $avg_discount = 0 ;
 
-                }
+                        foreach( $awards as $val){
+                            $clear_amount += $val['PayAmount'];
+                            $clear_discount += $val['PayDiscount'];
+                            $avg_dpe += $val['PayDpe'];
 
-                    $awards = $this->Cachemodel->getCacheAwards($this->cashpoolId, $this->vendorcode);
+                            $dpe -= $val['PayDpe'];
+                        }
 
-                    $clear_amount = 0 ;
-                    $clear_discount = 0;
-                    $avg_dpe = 0 ;
-                    #$avg_apr = 0 ;
-                    $avg_discount = 0 ;
+                        foreach( $awards as $val) {
+                            $avg_discount +=   round($val['PayDiscount']*100/$clear_amount , 2);
+                            #$avg_apr += round($val['PayDiscount']/$val['PayDpe']*365*100/$clear_amount, 2);
+                        }
 
-                    foreach( $awards as $val){
-                        $clear_amount += $val['PayAmount'];
-                        $clear_discount += $val['PayDiscount'];
-                        $avg_dpe += $val['PayDpe'];
+                        $avg_dpe = $avg_dpe > 0 ? round($avg_dpe*1.0/count($awards), 1) : 0 ;
 
-                        $dpe -= $val['PayDpe'];
-                    }
+                        $market['clearing'] = array(
+                            'available_amount' => $clear_amount,
+                            'average_dpe' => $avg_dpe
+                        );
 
-                    foreach( $awards as $val) {
-                        $avg_discount +=   round($val['PayDiscount']*100/$clear_amount , 2);
-                        #$avg_apr += round($val['PayDiscount']/$val['PayDpe']*365*100/$clear_amount, 2);
-                    }
+                        $market['nonclearing'] = array(
+                            'available_amount' => $amount - $clear_amount,
+                            'average_dpe' => $inv_count - count($awards) > 0 ?  round( $dpe*1.0/ ( $inv_count - count($awards)) , 1) : 0
+                        );
 
-                    $avg_dpe = $avg_dpe > 0 ? round($avg_dpe*1.0/count($awards), 1) : 0 ;
-
-                    $market['clearing'] = array(
-                        'available_amount' => $clear_amount,
-                        'average_dpe' => $avg_dpe
-                    );
-
-                    $market['nonclearing'] = array(
-                        'available_amount' => $amount - $clear_amount,
-                        'average_dpe' => $inv_count - count($awards) > 0 ?  round( $dpe*1.0/ ( $inv_count - count($awards)) , 1) : 0
-                    );
-
-                    $market['discount'] = array(
-                        'amount' => $clear_discount ,
-                        'average_discount' => $avg_discount ,
-                        'average_apr' =>  $clear_discount > 0 && isset($bid) ? $bid["result"] : 0
-                    );
+                        $market['discount'] = array(
+                            'amount' => $clear_discount ,
+                            'average_discount' => $avg_discount ,
+                            'average_apr' =>  $clear_discount > 0 && isset($bid) ? $bid["result"] : 0
+                        );*/
 
 
                 } else {

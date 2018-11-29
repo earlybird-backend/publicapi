@@ -45,9 +45,11 @@ class MarketModel extends CI_Model {
 	    $markets = array();
 
 	    $sql = 		"select p.CashpoolCode ,s.supplier,s.vendorcode,p.CompanyDivision as buyer,p.currencysign as currency_sign,p.currencyname as currency, p.Id as CashpoolId, p.NextPaydate as paydate, p.MarketStatus
+                     ,sc.VendorStatus,PayAmount,NoPayAmount,ValidAmount,PayDiscount,AvgAPR,AvgDpe,CashpoolStatus
                 from `Customer_Suppliers_Users` u
                 inner join `Customer_Suppliers` s ON s.Id = u.SupplierId  
-                inner join `Customer_Cashpool` p ON p.CashpoolCode = s.CashpoolCode                               
+                inner join `Customer_Cashpool` p ON p.CashpoolCode = s.CashpoolCode
+                left join `stat_current_cashpools_vendors` sc ON sc.CashpoolCode= s.CashpoolCode
                 where u.UserStatus = 1  and u.UserEmail = '".$this->profile['email']."'
                 ORDER BY p.Id DESC;
             ";
@@ -72,17 +74,17 @@ class MarketModel extends CI_Model {
                 $market["currency_sign"] = $row['currency_sign'];
                 $market["currency"] = $row['currency'];
 
-                $market['is_participation'] = 0;
+                $market['is_participation'] = intval($row['VendorStatus']);
                 $market['paydate'] = '-';
                 $market['offer_status'] = 0;
                 $market['offer_type'] = "APR";
                 $market['offer_value'] = 0.0;
-                $market['clearing_amount'] = 0.00;
-                $market['noclearing_amount'] = 0.00;
-                $market['avaibale_amount']  = 0.0;
-                $market['discount'] = 0.00;
-                $market['avg_apr'] = 0.0;
-                $market['avg_dpe'] = 0;
+                $market['clearing_amount'] = floatval($row['PayAmount']);
+                $market['noclearing_amount'] = floatval($row['NoPayAmount']);
+                $market['avaibale_amount']  = floatval($row['ValidAmount']);
+                $market['discount'] = floatval($row['PayDiscount']);;
+                $market['avg_apr'] = floatval($row['AvgAPR']);
+                $market['avg_dpe'] = floatval($row['AvgDpe']);
 
                 if($row['CashpoolId'] == null || empty($row['CashpoolId']) || !isset($row['MarketStatus']) || empty($row['MarketStatus']) || $row['MarketStatus'] != 1 )
                 {
