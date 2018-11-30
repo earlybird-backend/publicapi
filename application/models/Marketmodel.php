@@ -96,11 +96,11 @@ class MarketModel extends CI_Model {
                 
                     $market['buyer_status'] = 1;
                     $market['paydate']  = $row['paydate'];
-                    $paydate = $row['paydate'];
+                    //$paydate = $row['paydate'];
                 
                 }
                 
-                $sql = "SELECT Id,InvoiceNo,InvoiceAmount,EstPaydate
+                /*$sql = "SELECT Id,InvoiceNo,InvoiceAmount,EstPaydate
                 FROM `Customer_Payments`
                 where CashpoolCode = '{$row['CashpoolCode']}'
                 and Vendorcode = '{$row['vendorcode']}'
@@ -132,10 +132,10 @@ class MarketModel extends CI_Model {
 
                     $market['avg_dpe'] = round($dpe / count($invoices), 1);
                     $market['avaibale_amount'] = $amount;
-                }
+                }*/
 
                 //判断供应商是否已经参与了开价
-                $sql = "select id,bidstatus,bidtype, bidrate,minamount,awardbid from `Supplier_Bids` where CashpoolId = '{$row['CashpoolId']}'and vendorcode='{$row['vendorcode']}' order by createtime desc limit 1;";
+                /*$sql = "select id,bidstatus,bidtype, bidrate,minamount,awardbid from `Supplier_Bids` where CashpoolId = '{$row['CashpoolId']}'and vendorcode='{$row['vendorcode']}' order by createtime desc limit 1;";
 
                 $query = $this->db->query($sql);
 
@@ -157,9 +157,9 @@ class MarketModel extends CI_Model {
                         $market['is_participation'] = 0;
                         $market['offer_status'] = 0;
 
-                    }
+                    }*/
 
-                    $sql = "SELECT sum(PayAmount) as amount  , sum(PayDiscount) as discount
+                    /*$sql = "SELECT sum(PayAmount) as amount  , sum(PayDiscount) as discount
                         FROM `Customer_PayAwards` a                            
                         WHERE CashpoolId = '{$row['CashpoolId']}' AND  a.Vendorcode = '{$row['vendorcode']}' AND a.AwardStatus = 0 AND a.AwardDate = '".date('Y-m-d', time())."' ;                               
                     ";
@@ -185,7 +185,7 @@ class MarketModel extends CI_Model {
 
                 if( $amount <= 0 && $market['is_participation'] == 1){
                     $market['is_participation'] = 0;
-                }
+                }*/
                 
                 $markets[] = $market;
             }
