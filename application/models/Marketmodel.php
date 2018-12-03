@@ -49,7 +49,7 @@ class MarketModel extends CI_Model {
                 from `Customer_Suppliers_Users` u
                 inner join `Customer_Suppliers` s ON s.Id = u.SupplierId  
                 inner join `Customer_Cashpool` p ON p.CashpoolCode = s.CashpoolCode
-                left join `stat_current_cashpools_vendors` sc ON sc.CashpoolCode= s.CashpoolCode
+                left join `stat_current_cashpools_vendors` sc ON sc.CashpoolCode= s.CashpoolCode and sc.Vendorcode=s.Vendorcode
                 where u.UserStatus = 1  and u.UserEmail = '".$this->profile['email']."'
                 ORDER BY p.Id DESC;
             ";
@@ -85,6 +85,10 @@ class MarketModel extends CI_Model {
                 $market['discount'] = floatval($row['PayDiscount']);;
                 $market['avg_apr'] = floatval($row['AvgAPR']);
                 $market['avg_dpe'] = floatval($row['AvgDpe']);
+
+
+
+
 
                 if($row['CashpoolId'] == null || empty($row['CashpoolId']) || !isset($row['MarketStatus']) || empty($row['MarketStatus']) || $row['MarketStatus'] != 1 )
                 {
@@ -186,6 +190,27 @@ class MarketModel extends CI_Model {
                 if( $amount <= 0 && $market['is_participation'] == 1){
                     $market['is_participation'] = 0;
                 }*/
+
+                //判断供应商是否已经参与了开价
+                $sql = "select id,bidstatus,bidtype, bidrate,minamount,awardbid from `Supplier_Bids` where CashpoolId = '{$row['CashpoolId']}'and vendorcode='{$row['vendorcode']}' order by createtime desc limit 1;";
+
+                $query = $this->db->query($sql);
+
+                if ($query->num_rows() > 0) {
+
+                    $bid = $query->row_array();
+
+                    $market['offer_type'] = $bid['bidtype'];
+                    $market['offer_value'] = $bid['bidrate'];
+                    $market['avg_apr'] = isset($bid['awardbid']) ? $bid['awardbid'] : 0;
+
+                    if ($bid['bidstatus'] >= 0) {
+
+                        $market['is_participation'] = 1;
+                        $market['offer_status'] = $bid['bidstatus'] == 0 ? 1 : 0;   //若 bidstatus = 1 时则为开价后已经计算, bidstatus = 0 时则为开价后正在计算
+
+                    }
+                }
                 
                 $markets[] = $market;
             }
