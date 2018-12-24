@@ -64,8 +64,8 @@ $query_builder = TRUE;
 
 $db['default'] = array(
 	'dsn'	=> '',
-	'hostname' => '101.132.66.66',
-	'username' => 'dbuser',
+	'hostname' => '192.168.1.111',//101.132.66.66
+	'username' => 'root',
 	'password' => 'wodemima', // of course your pass can be different than mine
 	'database' => 'earlybird',
 	'dbdriver' => 'mysqli',
@@ -87,8 +87,8 @@ $db['default'] = array(
 
 $db['oauth2'] = array(
     'dsn'	=> '',
-    'hostname' => '101.132.66.66',
-    'username' => 'dbuser',
+    'hostname' => '192.168.1.111',
+    'username' => 'root',
     'password' => 'wodemima', // of course your pass can be different than mine
     'database' => 'oauth2',
     'dbdriver' => 'mysqli',
@@ -111,8 +111,8 @@ $db['oauth2'] = array(
 
 $db['activity'] = array(
     'dsn'	=> '',
-    'hostname' => '101.132.66.66',
-    'username' => 'dbuser',
+    'hostname' => '192.168.1.111',
+    'username' => 'root',
     'password' => 'wodemima', // of course your pass can be different than mine
     'database' => 'activity',
     'dbdriver' => 'mysqli',

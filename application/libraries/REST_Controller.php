@@ -427,7 +427,8 @@ abstract class REST_Controller extends CI_Controller {
     public function __construct($config = 'rest')
     {
         parent::__construct();
-
+        $this->load->model('UserActiveLog');
+        $this->UserActiveLog->beginLog($this);//开始写日志
         $this->_access_token = $this->input->get_post('access_token', TRUE);
         $this->_openid = $this->input->get_post('openid', TRUE);
 
@@ -640,7 +641,6 @@ abstract class REST_Controller extends CI_Controller {
 
         }
     }
-
     private function  get_profile(){
         if (isset($this->_user_id) && $this->_user_id > 0  ){
 
@@ -712,6 +712,7 @@ abstract class REST_Controller extends CI_Controller {
         {
             $this->_log_access_time();
         }
+
     }
 
     /**
@@ -900,6 +901,7 @@ abstract class REST_Controller extends CI_Controller {
      */
     public function response($data = NULL, $http_code = NULL, $continue = FALSE)
     {
+        $this->UserActiveLog->endLog($this);//写日志
         //if profiling enabled then print profiling data
 		$isProfilingEnabled = $this->config->item('enable_profiling');
 		if(!$isProfilingEnabled){
@@ -970,6 +972,7 @@ abstract class REST_Controller extends CI_Controller {
         	{
             	// Display the data and exit execution
             	$this->output->_display();
+                $this->UserActiveLog->outLog($this);
             	exit;
         	}
         	else
